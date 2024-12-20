@@ -26,23 +26,65 @@ function Button({ children }) {
 }
 
 function App() {
-  const [tasks, setTasks] = useState(data);
+  const [tasks, setTasks] = useState([]);
+
+  function handleAddTask(task) {
+    setTasks((tasks) => [...tasks, task]);
+  }
   return (
     <div>
       <h1>TODO LIST</h1>
-      <TaskInput />
+      <TaskInput onAddTask={handleAddTask} />
       <Filters />
       <TaskList tasks={tasks} />
     </div>
   );
 }
 
-function TaskInput() {
+function TaskInput({ onAddTask }) {
+  const [text, setText] = useState('');
+  const [completed, setCompleted] = useState(false);
+
+  function handleSubmit(e) {
+    const getCurrentFormattedDate = () => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = String(now.getFullYear()).slice(-2);
+
+      return `${hours}:${minutes}, ${day}/${month}/${year}`;
+    };
+
+    const createdAt = getCurrentFormattedDate();
+    e.preventDefault();
+    const id = crypto.randomUUID();
+
+    console.log(createdAt);
+    const newTask = {
+      id,
+      text,
+      completed,
+      createdAt,
+    };
+    console.log(newTask);
+
+    onAddTask(newTask);
+    setText('');
+  }
+
   return (
     <div>
-      <label htmlFor="">Add task</label>
-      <input type="text" />
-      <button>Add</button>
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="">Add task</label>
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <Button>Add</Button>
+      </form>
     </div>
   );
 }
