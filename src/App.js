@@ -27,23 +27,32 @@ function Button({ children }) {
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [completed, setCompleted] = useState(false);
 
   function handleAddTask(task) {
     setTasks((tasks) => [...tasks, task]);
   }
+
+  function handleSetCompleted(id) {
+    setTasks((tasks) =>
+      tasks.map((item) =>
+        item.id === id ? { ...item, completed: !item.completed } : item
+      )
+    );
+  }
+
   return (
     <div>
       <h1>TODO LIST</h1>
-      <TaskInput onAddTask={handleAddTask} />
+      <TaskInput onAddTask={handleAddTask} completed={completed} />
       <Filters />
-      <TaskList tasks={tasks} />
+      <TaskList tasks={tasks} onSetCompleted={handleSetCompleted} />
     </div>
   );
 }
 
-function TaskInput({ onAddTask }) {
+function TaskInput({ onAddTask, completed }) {
   const [text, setText] = useState('');
-  const [completed, setCompleted] = useState(false);
 
   function handleSubmit(e) {
     const getCurrentFormattedDate = () => {
@@ -101,21 +110,23 @@ function Filters() {
   );
 }
 
-function TaskList({ tasks }) {
+function TaskList({ tasks, onSetCompleted }) {
   return (
     <ul>
       {tasks.map((task) => (
-        <TaskItem task={task} key={task.id} />
+        <TaskItem task={task} key={task.id} onSetCompleted={onSetCompleted} />
       ))}
     </ul>
   );
 }
 
-function TaskItem({ task, children }) {
+function TaskItem({ task, onSetCompleted }) {
   return (
     <li>
-      <input type="checkbox" />
-      <h3>{task.text}</h3>
+      <input type="checkbox" onChange={() => onSetCompleted(task.id)} />
+      <h3 style={task.completed ? { textDecoration: 'line-through' } : {}}>
+        {task.text}
+      </h3>
       <p>{task.createdAt}</p>
       <Button>Delete</Button>
       <Button>Recreate</Button>
