@@ -21,16 +21,24 @@ const data = [
   },
 ];
 
-function Button({ children }) {
-  return <button>{children}</button>;
+function Button({ children, onClick }) {
+  return (
+    <button onClick={onClick} className="button">
+      {children}
+    </button>
+  );
 }
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [completed, setCompleted] = useState(false);
+  const [filter, setFilter] = useState('all');
 
   function handleAddTask(task) {
     setTasks((tasks) => [...tasks, task]);
+  }
+
+  function handleDeleteTask(id) {
+    setTasks((tasks) => tasks.filter((task) => task.id !== id));
   }
 
   function handleSetCompleted(id) {
@@ -41,12 +49,36 @@ function App() {
     );
   }
 
+  function handleEditTask(id, newText) {
+    setTasks((tasks) =>
+      tasks.map((task) => (task.id === id ? { ...task, text: newText } : task))
+    );
+  }
+
+  function handleFilter(input) {
+    setFilter(input);
+  }
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === 'all') return true;
+    if (filter === 'completed') return task.completed;
+    if (filter === 'active') return !task.completed;
+    return true;
+  });
+
   return (
-    <div>
-      <h1>TODO LIST</h1>
-      <TaskInput onAddTask={handleAddTask} completed={completed} />
-      <Filters />
-      <TaskList tasks={tasks} onSetCompleted={handleSetCompleted} />
+    <div className="container">
+      <h1 className="title">TODO LIST</h1>
+      <div className="header">
+        <TaskInput onAddTask={handleAddTask} />
+        <Filters onFilter={handleFilter} />
+      </div>
+      <TaskList
+        onDeleteTask={handleDeleteTask}
+        onEditTask={handleEditTask}
+        tasks={filteredTasks}
+        onSetCompleted={handleSetCompleted}
+      />
     </div>
   );
 }
@@ -74,7 +106,7 @@ function TaskInput({ onAddTask, completed }) {
     const newTask = {
       id,
       text,
-      completed,
+      completed: false,
       createdAt,
     };
     console.log(newTask);
@@ -86,8 +118,9 @@ function TaskInput({ onAddTask, completed }) {
   return (
     <div>
       <form onSubmit={handleSubmit}>
-        <label htmlFor="">Add task</label>
+        <label htmlFor="">Add task </label>
         <input
+          className="input"
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -98,10 +131,10 @@ function TaskInput({ onAddTask, completed }) {
   );
 }
 
-function Filters() {
+function Filters({ onFilter }) {
   return (
     <div>
-      <select name="" id="">
+      <select name="" id="" onChange={(e) => onFilter(e.target.value)}>
         <option value="all">all</option>
         <option value="completed">completed</option>
         <option value="active">active</option>
@@ -110,26 +143,69 @@ function Filters() {
   );
 }
 
-function TaskList({ tasks, onSetCompleted }) {
+function TaskList({ tasks, onSetCompleted, onDeleteTask, onEditTask }) {
   return (
     <ul>
       {tasks.map((task) => (
-        <TaskItem task={task} key={task.id} onSetCompleted={onSetCompleted} />
+        <TaskItem
+          task={task}
+          key={task.id}
+          onSetCompleted={onSetCompleted}
+          onDeleteTask={onDeleteTask}
+          onEditTask={onEditTask}
+        />
       ))}
     </ul>
   );
 }
 
-function TaskItem({ task, onSetCompleted }) {
+function TaskItem({ task, onSetCompleted, onDeleteTask, onEditTask }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(task.text);
+
+  function handleSave() {
+    onEditTask(task.id, editedText);
+    setIsEditing(false);
+  }
+
+  function handleCancel() {
+    setEditedText(task.text);
+    setIsEditing(false);
+  }
+
   return (
-    <li>
-      <input type="checkbox" onChange={() => onSetCompleted(task.id)} />
-      <h3 style={task.completed ? { textDecoration: 'line-through' } : {}}>
-        {task.text}
-      </h3>
-      <p>{task.createdAt}</p>
-      <Button>Delete</Button>
-      <Button>Recreate</Button>
+    <li className="task">
+      {isEditing ? (
+        <>
+          <input
+            type="text"
+            value={editedText}
+            onChange={(e) => setEditedText(e.target.value)}
+          />
+          <div className="button-container">
+            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleCancel}>Cancel</Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="task-container">
+            <div className="task-wrapper">
+              <input type="checkbox" onChange={() => onSetCompleted(task.id)} />
+              <h3
+                style={task.completed ? { textDecoration: 'line-through' } : {}}
+              >
+                {task.text}
+              </h3>
+            </div>
+            <p>Createt at: {task.createdAt}</p>
+          </div>
+          <div className="button-container">
+            <Button onClick={() => onDeleteTask(task.id)}>Delete</Button>
+            <Button onClick={() => setIsEditing(true)}>Edit</Button>
+          </div>
+        </>
+      )}
     </li>
   );
 }
